@@ -25,6 +25,34 @@ JOURNAL = 50
 # Payment types on credit (used to bundle e.g. "Rekening VvTP bestuur" per month)
 BUNDLE_PAYMENTS = [TAPPERS, BESTUUR_VVTP, REPRESENTATIE]
 
+msg = r"""
+
+___________              .__                __________
+\__    ___/_  _  __ ____ |  |___  __ ____   \______   \_____ _______  ______ ___________
+  |    |  \ \/ \/ // __ \|  |\  \/ // __ \   |     ___/\__  \\_  __ \/  ___// __ \_  __ \
+  |    |   \     /\  ___/|  |_\   /\  ___/   |    |     / __ \|  | \/\___ \\  ___/|  | \/
+  |____|    \/\_/  \___  >____/\_/  \___  >  |____|    (____  /__|  /____  >\___  >__|
+                       \/               \/                  \/           \/     \/
+
+
+Met dit script kan je transactiegegevens uit Twelve halen om vervolgens te
+importeren in Exact online. Het script werkt, maar het weet niet wat er is
+aangepast in Twelve. Dus als er nieuwe producten zijn, de productprijs is
+aangepast, of als er nieuwe "no sale" mogelijkheden zijn bijgekomen, dan moet
+het script aangepast worden!
+
+Zorg dat je nooit handmatig de transactiegegevens uit Twelve haalt!
+
+Belangrijk om te lezen voor gebruik:
+  - Exporteer transactiegegevens (Rapportage > Overige > Basisgegevens > Deze
+    lijst naar csv) NB: pak de goede begin- en einddatum!
+  - Zorg dat alle artikelen in Exact aanwezig zijn
+  - Zorg dat alle artikelprijzen up to date zijn in Exact
+  - Dubbelcheck of er geen extra "no sale" paymenttypes zijn toegevoegd
+  - Zorg dat er geen "facturen.csv" file aanwezig is
+
+"""
+
 
 def get_transactions(inputfile=INPUTFILE):
     with open(inputfile, "r", encoding="utf-8") as f:
@@ -174,6 +202,7 @@ def add_all_fields(totals):
 
 
 if __name__ == "__main__":
+    print(msg)
     InvoiceNumber = int(input("Eerstvolgend verkoopfactuurnummer: ")) - 1
     InputFile = input("Input file name (default: {}): ".format(INPUTFILE))
     InputFile = INPUTFILE if InputFile == "" else InputFile
