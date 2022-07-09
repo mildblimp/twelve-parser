@@ -10,6 +10,7 @@ REPRESENTATIE = "representatie"
 BESTUUR_VVTP = "rekening VvTP"
 EVENEMENT_VVTP = "commissie"
 EXTERN = "externe borrel"
+CAMPUS_CRAWL = "Campus crawl muntje"
 # Cost Unit links in Exact Online
 CU_WOENSDAG = "1"
 CU_VRIJDAG = "2"
@@ -87,7 +88,7 @@ def add_customer(data):
     if PaymentType in [PIN, TAPPERS, REPRESENTATIE]:
         data["PaymentCondition"] = DIRECT
         data["OrderAccountCode"] = KASSADEBITEUR
-    elif PaymentType in [BESTUUR_VVTP, EVENEMENT_VVTP]:
+    elif PaymentType in [BESTUUR_VVTP, EVENEMENT_VVTP, CAMPUS_CRAWL]:
         data["PaymentCondition"] = ON_CREDITS
         data["OrderAccountCode"] = VVTP
     else:
@@ -122,6 +123,9 @@ def add_description(data):
         elif PaymentType == EVENEMENT_VVTP:
             data["Description"] = "Borrel VvTP"
             data["YourRef"] = "Borrel VvTP"
+        elif PaymentType == CAMPUS_CRAWL:
+            data["Description"] = "Campus Crawl Muntje"
+            data["YourRef"] = "Campus Crawl Muntje"
         else:
             raise NotImplementedError(
                 "Not implemented: {} and {}".format(Customer, PaymentType)
