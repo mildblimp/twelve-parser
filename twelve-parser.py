@@ -172,7 +172,7 @@ def add_all_fields(totals):
 
 
 if __name__ == "__main__":
-    InvoiceNumber = int(input("Eerstvolgend verkoopboekstuknummer: ")) - 1
+    InvoiceNumber = int(input("Eerstvolgend verkoopfactuurnummer: ")) - 1
     InputFile = input("Input file name (default: {}): ".format(INPUTFILE))
     InputFile = INPUTFILE if InputFile == "" else InputFile
     transactions = get_transactions(InputFile)
