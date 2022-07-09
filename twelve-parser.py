@@ -144,15 +144,17 @@ def add_all_fields(totals):
     totals = totals.groupby(["Betaaltype", "Datum"]).apply(add_costunit)
     totals["Journal"] = JOURNAL
     totals = totals.groupby(["InvoiceNumber", "Product Id"])[
-        "Aantal",
-        "Aantal * prijs",
-        "Description",
-        "Journal",
-        "PaymentCondition",
-        "YourRef",
-        "OrderAccountCode",
-        "CostUnit",
-        "Datum",
+        [
+            "Aantal",
+            "Aantal * prijs",
+            "Description",
+            "Journal",
+            "PaymentCondition",
+            "YourRef",
+            "OrderAccountCode",
+            "CostUnit",
+            "Datum",
+        ]
     ].agg(
         {
             "Aantal": "sum",
