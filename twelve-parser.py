@@ -57,6 +57,7 @@ Belangrijk om te lezen voor gebruik:
 def get_transactions(inputfile=INPUTFILE):
     with open(inputfile, "r", encoding="utf-8") as f:
         df_transactions = pd.read_csv(f, delimiter=";")
+        print(f"Reading {inputfile}...")
     df = df_transactions[
         [
             "Product Id",
@@ -204,9 +205,9 @@ def add_all_fields(totals):
 if __name__ == "__main__":
     print(msg)
     InvoiceNumber = int(input("Eerstvolgend verkoopfactuurnummer: ")) - 1
-    InputFile = input("Input file name (default: {}): ".format(INPUTFILE))
-    InputFile = INPUTFILE if InputFile == "" else InputFile
-    transactions = get_transactions(InputFile)
+    transactions = get_transactions()
     invoice = add_all_fields(transactions)
-    with open("facturen.csv", "x") as f:
+    outfile = "facturen.csv"
+    with open(outfile, "x") as f:
         invoice.to_csv(f, sep=";", float_format="%.2f")
+        print(f"Writing {outfile}...")
