@@ -177,5 +177,5 @@ if __name__ == "__main__":
     InputFile = INPUTFILE if InputFile == "" else InputFile
     transactions = get_transactions(InputFile)
     invoice = add_all_fields(transactions)
-    with open("facturen.csv", "w") as f:
+    with open("facturen.csv", "x") as f:
         invoice.to_csv(f, sep=";", float_format="%.2f")
