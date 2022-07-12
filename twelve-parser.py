@@ -1,3 +1,5 @@
+import time
+
 import pandas as pd
 
 # defaults
@@ -17,6 +19,7 @@ CU_VRIJDAG = "2"
 CU_EXTERN = "3"
 # Customers
 VVTP = "1"
+UNUSED = "9997"
 KASSAINTERN = "9998"
 KASSADEBITEUR = "9999"
 # Payment Conditions
@@ -31,6 +34,22 @@ INTERNAL_PAYMENTS = [REPRESENTATIE, TAPPERS]
 # Warnings
 WARN_EXTERN = 0
 WARN_BORREL_VVTP = 0
+
+EXTERN_MSG = """
+Let op: er zijn een of meerdere borrels voor een externe instantie gegeven. Het
+script heeft automatisch de relatie 9997 als plaatshouder gebruikt (nodig voor
+de Exact import), maar die moet je handmatig veranderen! Zorg dat je ook een
+duidelijke waarde bij Uw. Ref. invult, dan is het voor de betreffende
+penningmeester duidelijk om welke borrel het gaat (bijv. "Borrel Leeghwater
+15-01-2021").
+
+"""
+VVTP_MSG = """
+Let op: er zijn een of meerdere borrels voor de VvTP gegeven. Zorg dat je bij
+Uw. Ref. een duidelijke omschrijving invult, bijvoorbeeld "Borrel SpoSpeCo
+Mario Kart 2020"
+
+"""
 
 msg = r"""
 
@@ -109,7 +128,7 @@ def add_customer(data):
         data["OrderAccountCode"] = VVTP
     else:
         data["PaymentCondition"] = ON_CREDITS
-        data["OrderAccountCode"] = None
+        data["OrderAccountCode"] = UNUSED
     return data
 
 
@@ -231,20 +250,18 @@ def add_all_fields(totals):
 if __name__ == "__main__":
     print(msg)
     InvoiceNumber = 1  # We don't have to track this, Exact does it for us.
+    if input("Doorgaan y/n? ").lower() not in ["j", "y"]:
+        exit()
     transactions = get_transactions()
     invoice = add_all_fields(transactions)
     outfile = "facturen.csv"
+    time.sleep(1)
     with open(outfile, "x") as f:
         invoice.to_csv(f, sep=";", float_format="%.2f")
         print(f"Writing {outfile}...\n")
 
+    time.sleep(1)
     if WARN_EXTERN:
-        print("LET OP: Externe borrel gevonden, check facturen voor afdrukken!")
-        print(
-            "Zorg dat je de juiste relatie toevoegd en Uw. Ref. zoals Borrel PS 15-01-2018"
-        )
+        print(EXTERN_MSG)
     if WARN_BORREL_VVTP:
-        print("LET OP: VvTP borrel gevonden, check facturen voor afdrukken!")
-        print(
-            "Zorg dat je een duidelijke Uw. Ref. toevoegd bijv. Borrel Lustrumreis 21-09-2018"
-        )
+        print(VVTP_MSG)
