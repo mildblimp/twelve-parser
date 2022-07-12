@@ -230,7 +230,7 @@ def add_all_fields(totals):
 
 if __name__ == "__main__":
     print(msg)
-    InvoiceNumber = int(input("Eerstvolgend verkoopfactuurnummer: ")) - 1
+    InvoiceNumber = 1  # We don't have to track this, Exact does it for us.
     transactions = get_transactions()
     invoice = add_all_fields(transactions)
     outfile = "facturen.csv"
