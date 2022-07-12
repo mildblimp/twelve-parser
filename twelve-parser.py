@@ -186,6 +186,7 @@ def add_all_fields(totals):
         [
             "Aantal",
             "Aantal * prijs",
+            "Prijs (per product)",
             "Description",
             "Journal",
             "PaymentCondition",
@@ -198,6 +199,7 @@ def add_all_fields(totals):
         {
             "Aantal": "sum",
             "Aantal * prijs": "sum",
+            "Prijs (per product)": "first",
             "Description": "first",
             "Journal": "first",
             "PaymentCondition": "first",
