@@ -28,6 +28,9 @@ JOURNAL = 50
 BUNDLE_PAYMENTS = [TAPPERS, BESTUUR_VVTP, REPRESENTATIE]
 EXTERNAL_PAYMENTS = [BESTUUR_VVTP, EVENEMENT_VVTP, EXTERN, CAMPUS_CRAWL]
 INTERNAL_PAYMENTS = [REPRESENTATIE, TAPPERS]
+# Warnings
+WARN_EXTERN = 0
+WARN_BORREL_VVTP = 0
 
 msg = r"""
 
@@ -41,9 +44,8 @@ ___________              .__                __________
 
 Met dit script kan je transactiegegevens uit Twelve halen om vervolgens te
 importeren in Exact online. Het script werkt, maar het weet niet wat er is
-aangepast in Twelve. Dus als er nieuwe producten zijn, de productprijs is
-aangepast, of als er nieuwe "no sale" mogelijkheden zijn bijgekomen, dan moet
-het script aangepast worden!
+aangepast in Twelve. Dus als er nieuwe producten zijn,  of als er nieuwe "no
+sale" mogelijkheden zijn bijgekomen, dan moet het script worden aangepast!
 
 Zorg dat je nooit handmatig de transactiegegevens uit Twelve haalt!
 
@@ -51,9 +53,17 @@ Belangrijk om te lezen voor gebruik:
   - Exporteer transactiegegevens (Rapportage > Overige > Basisgegevens > Deze
     lijst naar csv) NB: pak de goede begin- en einddatum!
   - Zorg dat alle artikelen in Exact aanwezig zijn
-  - Zorg dat alle artikelprijzen up to date zijn in Exact
-  - Dubbelcheck of er geen extra "no sale" paymenttypes zijn toegevoegd
+  - Zorg dat alle inkoopprijzen van de artikelen up-to-date zijn!
   - Zorg dat er geen "facturen.csv" file aanwezig is
+  - Voeg na afloop een duidelijke Uw. Ref. in bij externe borrels en borrels
+    van de VvTP (zo weten de respectieve penningmeesters waar de factuur om
+    gaat)
+
+Na afloop krijg je een file "facturen.csv" die je kan importeren in Exact. Alle
+PIN transacties gaan via de relatie kassadebiteur, en die letteren precies goed
+af op het bedrag dat via de PIN is binnengekomen. Interne transacties gaan via
+de relatie KassaIntern, deze moeten nog handmatig worden afgeletterd op de
+juiste grootboekkaarten zoals "gebruik tappers" en "breuk & bederf".
 
 """
 
@@ -127,6 +137,8 @@ def add_description(data):
             data["Description"] = description
             data["YourRef"] = description
         elif PaymentType == EVENEMENT_VVTP:
+            global WARN_BORREL_VVTP
+            WARN_BORREL_VVTP += 1
             data["Description"] = "Borrel VvTP"
             data["YourRef"] = "Borrel VvTP"
         elif PaymentType == CAMPUS_CRAWL:
@@ -137,6 +149,8 @@ def add_description(data):
                 "Not implemented: {} and {}".format(Customer, PaymentType)
             )
     else:
+        global WARN_EXTERN
+        WARN_EXTERN += 1
         data["Description"] = "Borrel"
         data["YourRef"] = None
     return data
@@ -222,4 +236,15 @@ if __name__ == "__main__":
     outfile = "facturen.csv"
     with open(outfile, "x") as f:
         invoice.to_csv(f, sep=";", float_format="%.2f")
-        print(f"Writing {outfile}...")
+        print(f"Writing {outfile}...\n")
+
+    if WARN_EXTERN:
+        print("LET OP: Externe borrel gevonden, check facturen voor afdrukken!")
+        print(
+            "Zorg dat je de juiste relatie toevoegd en Uw. Ref. zoals Borrel PS 15-01-2018"
+        )
+    if WARN_BORREL_VVTP:
+        print("LET OP: VvTP borrel gevonden, check facturen voor afdrukken!")
+        print(
+            "Zorg dat je een duidelijke Uw. Ref. toevoegd bijv. Borrel Lustrumreis 21-09-2018"
+        )
