@@ -17,6 +17,7 @@ CU_VRIJDAG = "2"
 CU_EXTERN = "3"
 # Customers
 VVTP = "1"
+KASSAINTERN = "9998"
 KASSADEBITEUR = "9999"
 # Payment Conditions
 DIRECT = "02"
@@ -25,6 +26,8 @@ ON_CREDITS = "30"  # 30 days
 JOURNAL = 50
 # Payment types on credit (used to bundle e.g. "Rekening VvTP bestuur" per month)
 BUNDLE_PAYMENTS = [TAPPERS, BESTUUR_VVTP, REPRESENTATIE]
+EXTERNAL_PAYMENTS = [BESTUUR_VVTP, EVENEMENT_VVTP, EXTERN, CAMPUS_CRAWL]
+INTERNAL_PAYMENTS = [REPRESENTATIE, TAPPERS]
 
 msg = r"""
 
@@ -85,10 +88,13 @@ def add_invoicenumber(data):
 
 def add_customer(data):
     PaymentType = data.name
-    if PaymentType in [PIN, TAPPERS, REPRESENTATIE]:
+    if PaymentType == PIN:
         data["PaymentCondition"] = DIRECT
         data["OrderAccountCode"] = KASSADEBITEUR
-    elif PaymentType in [BESTUUR_VVTP, EVENEMENT_VVTP, CAMPUS_CRAWL]:
+    elif PaymentType in INTERNAL_PAYMENTS:
+        data["PaymentCondition"] = DIRECT
+        data["OrderAccountCode"] = KASSAINTERN
+    elif PaymentType in EXTERNAL_PAYMENTS:
         data["PaymentCondition"] = ON_CREDITS
         data["OrderAccountCode"] = VVTP
     else:
@@ -102,10 +108,10 @@ def add_description(data):
     Date = data["Datum"].iloc[0]
     PaymentType = data["Betaaltype"].iloc[0]
     if Customer == KASSADEBITEUR:
-        if PaymentType == PIN:
-            data["Description"] = "kassamutaties {}".format(Date.strftime("%d-%m-%Y"))
-            data["YourRef"] = None
-        elif PaymentType == TAPPERS:
+        data["Description"] = "kassamutaties {}".format(Date.strftime("%d-%m-%Y"))
+        data["YourRef"] = None
+    elif Customer == KASSAINTERN:
+        if PaymentType == TAPPERS:
             data["Description"] = "gebruik tappers {}".format(Date.strftime("%B %Y"))
             data["YourRef"] = None
         elif PaymentType == REPRESENTATIE:
