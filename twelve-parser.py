@@ -215,11 +215,10 @@ def add_all_fields(totals):
     totals = totals.groupby(["InvoiceNumber"]).apply(add_date)
     totals = totals.groupby(["Betaaltype", "Datum"]).apply(add_costunit)
     totals["Journal"] = JOURNAL
-    totals = totals.groupby(["InvoiceNumber", "Product Id"])[
+    totals = totals.groupby(["InvoiceNumber", "Product Id", "Prijs (per product)"])[
         [
             "Aantal",
             "Aantal * prijs",
-            "Prijs (per product)",
             "Description",
             "Journal",
             "PaymentCondition",
@@ -232,7 +231,6 @@ def add_all_fields(totals):
         {
             "Aantal": "sum",
             "Aantal * prijs": "sum",
-            "Prijs (per product)": "first",
             "Description": "first",
             "Journal": "first",
             "PaymentCondition": "first",
