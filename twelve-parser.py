@@ -13,6 +13,9 @@ BESTUUR_VVTP = "rekening VvTP"
 EVENEMENT_VVTP = "commissie"
 EXTERN = "externe borrel"
 CAMPUS_CRAWL = "Campus crawl muntje"
+# GL types for internal bookings
+GL_TAPPERS = 4491
+GL_REPRESENTATIE = 4470
 # Cost Unit links in Exact Online
 CU_WOENSDAG = "1"
 CU_VRIJDAG = "2"
@@ -68,21 +71,19 @@ sale" mogelijkheden zijn bijgekomen, dan moet het script worden aangepast!
 
 Zorg dat je nooit handmatig de transactiegegevens uit Twelve haalt!
 
-Belangrijk om te lezen voor gebruik:
-  - Exporteer transactiegegevens (Rapportage > Overige > Basisgegevens > Deze
-    lijst naar csv) NB: pak de goede begin- en einddatum!
-  - Zorg dat alle artikelen in Exact aanwezig zijn
-  - Zorg dat alle inkoopprijzen van de artikelen up-to-date zijn!
-  - Zorg dat er geen "facturen.csv" file aanwezig is
-  - Voeg na afloop een duidelijke Uw. Ref. in bij externe borrels en borrels
-    van de VvTP (zo weten de respectieve penningmeesters waar de factuur om
-    gaat)
+- Exporteer transactiegegevens (Rapportage > Overige > Basisgegevens > Deze
+  lijst naar csv) NB: pak de goede begin- en einddatum!
+- Zorg dat alle artikelen in Exact aanwezig zijn met de juiste btw-code en
+  inkoopprijs
+- Voeg na afloop een duidelijke Uw. Ref. in bij externe borrels en borrels van
+  de VvTP (zo weten de respectieve penningmeesters waar de factuur om gaat)
 
-Na afloop krijg je een file "facturen.csv" die je kan importeren in Exact. Alle
-PIN transacties gaan via de relatie kassadebiteur, en die letteren precies goed
-af op het bedrag dat via de PIN is binnengekomen. Interne transacties gaan via
-de relatie KassaIntern, deze moeten nog handmatig worden afgeletterd op de
-juiste grootboekkaarten zoals "gebruik tappers" en "breuk & bederf".
+Na afloop krijg je een bestand `facturen.csv` en `kassa_intern.csv` die je kan
+importeren in Exact. Alle PIN transacties gaan via de relatie "Kassadebiteur",
+en die letteren precies goed af op het bedrag dat via de PIN is binnengekomen.
+Interne transacties gaan via de relatie "Kassa intern", deze worden automatisch
+afgeletterd op de juiste grootboekkaarten zoals "gebruik tappers" en "breuk &
+bederf" als je dit bestand importeerd.
 
 """
 
@@ -90,7 +91,7 @@ juiste grootboekkaarten zoals "gebruik tappers" en "breuk & bederf".
 def get_transactions(inputfile=INPUTFILE):
     with open(inputfile, "r", encoding="utf-8") as f:
         df_transactions = pd.read_csv(f, delimiter=";")
-        print(f"Reading {inputfile}...")
+        print(f"Reading {inputfile}...\n")
     df = df_transactions[
         [
             "Product Id",
@@ -123,6 +124,11 @@ def add_customer(data):
     elif PaymentType in INTERNAL_PAYMENTS:
         data["PaymentCondition"] = DIRECT
         data["OrderAccountCode"] = KASSAINTERN
+        # Add the GL (grootboekrekening) for internal transactions
+        if PaymentType == TAPPERS:
+            data["GLAccount"] = GL_TAPPERS
+        elif PaymentType == REPRESENTATIE:
+            data["GLAccount"] = GL_REPRESENTATIE
     elif PaymentType in EXTERNAL_PAYMENTS:
         data["PaymentCondition"] = ON_CREDITS
         data["OrderAccountCode"] = VVTP
@@ -198,7 +204,7 @@ def add_date(data):
 
 
 def add_all_fields(totals):
-    """Takes twelve transation export and create Exact Online import file."""
+    """Takes twelve transation export and create Exact Online import files."""
     totals1 = (
         totals.query("Betaaltype in {}".format(BUNDLE_PAYMENTS))
         .groupby(["Betaaltype", pd.Grouper(key="Datum", freq="1M")])
@@ -215,7 +221,32 @@ def add_all_fields(totals):
     totals = totals.groupby(["InvoiceNumber"]).apply(add_date)
     totals = totals.groupby(["Betaaltype", "Datum"]).apply(add_costunit)
     totals["Journal"] = JOURNAL
-    totals = totals.groupby(["InvoiceNumber", "Product Id", "Prijs (per product)"])[
+    memo = (
+        totals.loc[totals["Betaaltype"].isin(INTERNAL_PAYMENTS)]
+        .groupby(["Description"])[
+            [
+                "Prijs (per product)",
+                "Journal",
+                "PaymentCondition",
+                "OrderAccountCode",
+                "Datum",
+                "GLAccount",
+            ]
+        ]
+        .agg(
+            {
+                "Prijs (per product)": "sum",
+                "Journal": "first",
+                "PaymentCondition": "first",
+                "OrderAccountCode": "first",
+                "Datum": "first",
+                "GLAccount": "first",
+            }
+        )
+    )
+    memo["GLAccount"] = memo["GLAccount"].astype(int)
+    memo["Prijs (per product)"] *= -1
+    factuur = totals.groupby(["InvoiceNumber", "Product Id", "Prijs (per product)"])[
         [
             "Aantal",
             "Aantal * prijs",
@@ -240,9 +271,9 @@ def add_all_fields(totals):
             "Datum": "first",
         }
     )
-    totals.rename(columns={"Datum": "OrderDate"}, inplace=True)
-    totals.rename(columns={"Product Id": "ItemCode"}, inplace=True)
-    return totals
+    factuur.rename(columns={"Datum": "OrderDate"}, inplace=True)
+    factuur.rename(columns={"Product Id": "ItemCode"}, inplace=True)
+    return factuur, memo
 
 
 if __name__ == "__main__":
@@ -251,12 +282,15 @@ if __name__ == "__main__":
     if input("Doorgaan y/n? ").lower() not in ["j", "y"]:
         exit()
     transactions = get_transactions()
-    invoice = add_all_fields(transactions)
-    outfile = "facturen.csv"
+    invoice, memo = add_all_fields(transactions)
+    out_factuur = "facturen.csv"
+    out_memo = "kassa_intern.csv"
+    invoice.to_csv(out_factuur, sep=";", float_format="%.2f")
+    memo.to_csv(out_memo, sep=";", float_format="%.2f")
+
     time.sleep(1)
-    with open(outfile, "x") as f:
-        invoice.to_csv(f, sep=";", float_format="%.2f")
-        print(f"Writing {outfile}...\n")
+    print(f"Writing {out_factuur}...")
+    print(f"Writing {out_memo}...\n")
 
     time.sleep(1)
     if WARN_EXTERN:
