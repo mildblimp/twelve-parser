@@ -150,7 +150,7 @@ def add_description(data):
     Customer = data["OrderAccountCode"].iloc[0]
     Date = data["Datum"].iloc[0]
     PaymentType = data["Betaaltype"].iloc[0]
-    if Customer == KASSADEBITEUR:
+    if Customer == KASSADEBITEUR and PaymentType == PIN:
         data["Description"] = "kassamutaties {}".format(Date.strftime("%d-%m-%Y"))
         data["YourRef"] = None
     elif Customer == KASSAINTERN:
@@ -174,11 +174,8 @@ def add_description(data):
         elif PaymentType == EVENEMENT_VVTP:
             global WARN_BORREL_VVTP
             WARN_BORREL_VVTP += 1
-            data["Description"] = "Borrel VvTP"
-            data["YourRef"] = "Borrel VvTP"
-        elif PaymentType == CAMPUS_CRAWL:
-            data["Description"] = "Campus Crawl Muntje"
-            data["YourRef"] = "Campus Crawl Muntje"
+            data["Description"] = "Borrel VvTP PLAATSHOUDER"
+            data["YourRef"] = "Borrel VvTP PLAATSHOUDER"
         else:
             raise NotImplementedError(
                 "De combinatie relatie en betaaltype is niet bekend "
@@ -188,13 +185,21 @@ def add_description(data):
     elif Customer == EXTERN_PLACEHOLDER:
         global WARN_EXTERN
         WARN_EXTERN += 1
-        data["Description"] = "Borrel"
-        data["YourRef"] = None
+        if PaymentType == EXTERN:
+            data["Description"] = "Borrel PLAATSHOUDER"
+            data["YourRef"] = "PLAATSHOUDER"
+        elif PaymentType == CAMPUS_CRAWL:
+            data["Description"] = "Campus Crawl Muntje"
+            data["YourRef"] = "Campus Crawl Muntje"
+        else:
+            raise NotImplementedError(
+                "De combinatie relatie en betaaltype is niet bekend "
+                f"({Customer} en {PaymentType}). Is er een nieuwe no-sale "
+                "mogelijkheid bijgekomen?"
+            )
     else:
         raise NotImplementedError(
-            "De combinatie relatie en betaaltype is niet bekend "
-            f"({Customer} en {PaymentType}). Is er een nieuwe no-sale "
-            "mogelijkheid bijgekomen?"
+            f"De relatie {Customer} is niet bekend. Is er een nieuwe aangemaakt?"
         )
     return data
 
