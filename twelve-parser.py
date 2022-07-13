@@ -10,7 +10,7 @@ PIN = "Omzet PIN"
 TAPPERS = "gebruik tappers"
 REPRESENTATIE = "representatie"
 BESTUUR_VVTP = "rekening VvTP"
-EVENEMENT_VVTP = "commissie"
+EVENEMENT_VVTP = "Commissie"
 EXTERN = "externe borrel"
 CAMPUS_CRAWL = "Campus crawl muntje"
 # GL types for internal bookings
@@ -22,7 +22,7 @@ CU_VRIJDAG = "2"
 CU_EXTERN = "3"
 # Customers
 VVTP = "1"
-UNUSED = "9997"
+EXTERN_PLACEHOLDER = "9997"
 KASSAINTERN = "9998"
 KASSADEBITEUR = "9999"
 # Payment Conditions
@@ -30,9 +30,12 @@ DIRECT = "02"
 ON_CREDITS = "30"  # 30 days
 # Invoice journal number
 JOURNAL = 50
-# Payment types on credit (used to bundle e.g. "Rekening VvTP bestuur" per month)
+# Specify which payment methods should be grouped per month (used to bundle
+# e.g. "Gebruik tappers" per month)
 BUNDLE_PAYMENTS = [TAPPERS, BESTUUR_VVTP, REPRESENTATIE]
-EXTERNAL_PAYMENTS = [BESTUUR_VVTP, EVENEMENT_VVTP, EXTERN, CAMPUS_CRAWL]
+# Specify which payments are internal, for the VvTP, and external
+VVTP_PAYMENTS = [BESTUUR_VVTP, EVENEMENT_VVTP, CAMPUS_CRAWL]
+EXTERNAL_PAYMENTS = [EXTERN]
 INTERNAL_PAYMENTS = [REPRESENTATIE, TAPPERS]
 # Warnings
 WARN_EXTERN = 0
@@ -45,13 +48,11 @@ de Exact import), maar die moet je handmatig veranderen! Zorg dat je ook een
 duidelijke waarde bij Uw. Ref. invult, dan is het voor de betreffende
 penningmeester duidelijk om welke borrel het gaat (bijv. "Borrel Leeghwater
 15-01-2021").
-
 """
 VVTP_MSG = """
 Let op: er zijn een of meerdere borrels voor de VvTP gegeven. Zorg dat je bij
 Uw. Ref. een duidelijke omschrijving invult, bijvoorbeeld "Borrel SpoSpeCo
 Mario Kart 2020"
-
 """
 
 msg = r"""
@@ -129,12 +130,19 @@ def add_customer(data):
             data["GLAccount"] = GL_TAPPERS
         elif PaymentType == REPRESENTATIE:
             data["GLAccount"] = GL_REPRESENTATIE
-    elif PaymentType in EXTERNAL_PAYMENTS:
+    elif PaymentType in VVTP_PAYMENTS:
         data["PaymentCondition"] = ON_CREDITS
         data["OrderAccountCode"] = VVTP
-    else:
+    elif PaymentType in EXTERNAL_PAYMENTS:
         data["PaymentCondition"] = ON_CREDITS
-        data["OrderAccountCode"] = UNUSED
+        data["OrderAccountCode"] = EXTERN_PLACEHOLDER
+    else:
+        raise NotImplementedError(
+            "Er is weggeboekt op een no-sale categorie dit niet bekend is bij het "
+            f"script: {PaymentType}. Is er een categorie hernoemd? Of is er een nieuwe "
+            "toegevoegd? In het laatste geval moet het script worden aangepast, "
+            "vraag om hulp."
+        )
     return data
 
 
@@ -154,7 +162,9 @@ def add_description(data):
             data["YourRef"] = None
         else:
             raise NotImplementedError(
-                "Not implemented: {} and {}".format(Customer, PaymentType)
+                "De combinatie relatie en betaaltype is niet bekend "
+                f"({Customer} en {PaymentType}). Is er een nieuwe no-sale "
+                "mogelijkheid bijgekomen?"
             )
     elif Customer == VVTP:
         if PaymentType == BESTUUR_VVTP:
@@ -171,13 +181,21 @@ def add_description(data):
             data["YourRef"] = "Campus Crawl Muntje"
         else:
             raise NotImplementedError(
-                "Not implemented: {} and {}".format(Customer, PaymentType)
+                "De combinatie relatie en betaaltype is niet bekend "
+                f"({Customer} en {PaymentType}). Is er een nieuwe no-sale "
+                "mogelijkheid bijgekomen?"
             )
-    else:
+    elif Customer == EXTERN_PLACEHOLDER:
         global WARN_EXTERN
         WARN_EXTERN += 1
         data["Description"] = "Borrel"
         data["YourRef"] = None
+    else:
+        raise NotImplementedError(
+            "De combinatie relatie en betaaltype is niet bekend "
+            f"({Customer} en {PaymentType}). Is er een nieuwe no-sale "
+            "mogelijkheid bijgekomen?"
+        )
     return data
 
 
