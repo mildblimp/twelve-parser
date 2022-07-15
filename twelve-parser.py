@@ -13,9 +13,6 @@ BESTUUR_VVTP = "rekening VvTP"
 EVENEMENT_VVTP = "Commissie"
 EXTERN = "externe borrel"
 CAMPUS_CRAWL = "Campus crawl muntje"
-# GL types for internal bookings
-GL_TAPPERS = 4491
-GL_REPRESENTATIE = 4470
 # Cost Unit links in Exact Online
 CU_WOENSDAG = "1"
 CU_VRIJDAG = "2"
@@ -125,11 +122,6 @@ def add_customer(data):
     elif PaymentType in INTERNAL_PAYMENTS:
         data["PaymentCondition"] = DIRECT
         data["OrderAccountCode"] = KASSAINTERN
-        # Add the GL (grootboekrekening) for internal transactions
-        if PaymentType == TAPPERS:
-            data["GLAccount"] = GL_TAPPERS
-        elif PaymentType == REPRESENTATIE:
-            data["GLAccount"] = GL_REPRESENTATIE
     elif PaymentType in VVTP_PAYMENTS:
         data["PaymentCondition"] = ON_CREDITS
         data["OrderAccountCode"] = VVTP
@@ -244,31 +236,6 @@ def add_all_fields(totals):
     totals = totals.groupby(["InvoiceNumber"]).apply(add_date)
     totals = totals.groupby(["Betaaltype", "Datum"]).apply(add_costunit)
     totals["Journal"] = JOURNAL
-    memo = (
-        totals.loc[totals["Betaaltype"].isin(INTERNAL_PAYMENTS)]
-        .groupby(["Description"])[
-            [
-                "Prijs (per product)",
-                "Journal",
-                "PaymentCondition",
-                "OrderAccountCode",
-                "Datum",
-                "GLAccount",
-            ]
-        ]
-        .agg(
-            {
-                "Prijs (per product)": "sum",
-                "Journal": "first",
-                "PaymentCondition": "first",
-                "OrderAccountCode": "first",
-                "Datum": "first",
-                "GLAccount": "first",
-            }
-        )
-    )
-    memo["GLAccount"] = memo["GLAccount"].astype(int)
-    memo["Prijs (per product)"] *= -1
     factuur = totals.groupby(["InvoiceNumber", "Product Id", "Prijs (per product)"])[
         [
             "Aantal",
@@ -296,7 +263,7 @@ def add_all_fields(totals):
     )
     factuur.rename(columns={"Datum": "OrderDate"}, inplace=True)
     factuur.rename(columns={"Product Id": "ItemCode"}, inplace=True)
-    return factuur, memo
+    return factuur
 
 
 if __name__ == "__main__":
@@ -305,15 +272,12 @@ if __name__ == "__main__":
     if input("Doorgaan y/n? ").lower() not in ["j", "y"]:
         exit()
     transactions = get_transactions()
-    invoice, memo = add_all_fields(transactions)
+    invoice = add_all_fields(transactions)
     out_factuur = "facturen.csv"
-    out_memo = "kassa_intern.csv"
     invoice.to_csv(out_factuur, sep=";", float_format="%.2f")
-    memo.to_csv(out_memo, sep=";", float_format="%.2f")
 
     time.sleep(1)
     print(f"Writing {out_factuur}...")
-    print(f"Writing {out_memo}...\n")
 
     time.sleep(1)
     if WARN_EXTERN:

@@ -7,7 +7,8 @@ importbestand voor facturen in Exact maakt.
 
 Het script werkt, maar het weet niet wat er is aangepast in Twelve. Dus als er
 nieuwe producten zijn, de inkoopproductprijs is aangepast, of als er nieuwe "no
-sale" mogelijkheden zijn bijgekomen, dan moet het script aangepast worden!
+sale" mogelijkheden zijn bijgekomen, dan moeten het script, Twelve en Exact
+aangepast worden!
 
 ## Gebruik
 
@@ -21,17 +22,26 @@ Belangrijk om te lezen voor gebruik:
   inkoopprijs
 - Importeer het `facturen.csv` bestand via Import/Export > CSV/Excel >
   Verkoopfacturen (import) > Mijn importdefinities > Import script
-- Importeer het `kassa_intern.csv` bestand via Import/Export > CSV/Excel >
-  Verkoopboekingen (import) > Mijn importdefinities > Import script
 - Voeg na afloop een duidelijke Uw. Ref. in bij externe borrels en borrels van
   de VvTP (zo weten de respectieve penningmeesters waar de factuur om gaat)
+- Als je naar de TU factureerd, zorg dan dat de juiste contactpersoon in Exact
+  staat, en dat bij het veld BSN/sofinummer de baancode is ingevuld. Dit wordt
+  in de factuurlayout voor de TU gebruikt. Als het niet is ingevuld, wordt de
+  factuur niet betaald.
+- Controleer de facturen voor gebruik (vooral die voor de VvTP en externe
+  instanties) en verstuur ze in Exact via email.
+- Letter 9998: Kassa intern af (zie hieronder)
 
-Na afloop krijg je een bestand `facturen.csv` en `kassa_intern.csv` die je kan
-importeren in Exact. Alle PIN transacties gaan via de relatie "Kassadebiteur",
-en die letteren precies goed af op het bedrag dat via de PIN is binnengekomen.
-Interne transacties gaan via de relatie "Kassa intern", deze worden automatisch
-afgeletterd op de juiste grootboekkaarten zoals "gebruik tappers" en "breuk &
-bederf" als je dit bestand importeerd.
+Na afloop krijg je een bestand `facturen.csv` die je kan importeren in Exact.
+Alle PIN transacties gaan via de relatie "Kassadebiteur", en die letteren
+precies goed af op het bedrag dat via de PIN is binnengekomen. Interne
+transacties gaan via de relatie "Kassa intern", deze moet je nog afletteren op
+de juiste grootboekkaarten "representatie" en "gebruik tappers". Doe dit door
+te gaan naar 9998: Kassa intern > afletteren, en selecteer eerst alle
+transacties met "gebruik tappers", druk op afletteren. Druk op "overige", vul
+de juiste grootboekrekening in, een goede omschrijving, boekdatum in de juiste
+periode, en druk op afletteren. Doe hetzelfde voor "represenatie" of andere
+openstaande transacties.
 
 ## Extern gebruik
 
