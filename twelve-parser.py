@@ -62,27 +62,13 @@ ___________              .__                __________
                        \/               \/                  \/           \/     \/
 
 
-Met dit script kan je transactiegegevens uit Twelve halen om vervolgens te
-importeren in Exact online. Het script werkt, maar het weet niet wat er is
-aangepast in Twelve. Dus als er nieuwe producten zijn,  of als er nieuwe "no
-sale" mogelijkheden zijn bijgekomen, dan moet het script worden aangepast!
+Dit script haalt ruwe transactiegegevens uit Twelve en maakt daarvan een
+importbestand voor facturen voor in Exact.
 
-Zorg dat je nooit handmatig de transactiegegevens uit Twelve haalt!
+Zorg dat je nooit handmatig de transactiegegevens uit Twelve haalt en nooit
+handmatig facturen aanmaakt!
 
-- Exporteer transactiegegevens (Rapportage > Overige > Basisgegevens > Deze
-  lijst naar csv) NB: pak de goede begin- en einddatum!
-- Zorg dat alle artikelen in Exact aanwezig zijn met de juiste btw-code en
-  inkoopprijs
-- Voeg na afloop een duidelijke Uw. Ref. in bij externe borrels en borrels van
-  de VvTP (zo weten de respectieve penningmeesters waar de factuur om gaat)
-
-Na afloop krijg je een bestand `facturen.csv` en `kassa_intern.csv` die je kan
-importeren in Exact. Alle PIN transacties gaan via de relatie "Kassadebiteur",
-en die letteren precies goed af op het bedrag dat via de PIN is binnengekomen.
-Interne transacties gaan via de relatie "Kassa intern", deze worden automatisch
-afgeletterd op de juiste grootboekkaarten zoals "gebruik tappers" en "breuk &
-bederf" als je dit bestand importeerd.
-
+N.B. Lees de README! (Staat op Github)
 """
 
 
@@ -269,7 +255,7 @@ def add_all_fields(totals):
 if __name__ == "__main__":
     print(msg)
     InvoiceNumber = 1  # We don't have to track this, Exact does it for us.
-    if input("Doorgaan y/n? ").lower() not in ["j", "y"]:
+    if input("Doorgaan (en README gelezen) y/n? ").lower() not in ["j", "y"]:
         exit()
     transactions = get_transactions()
     invoice = add_all_fields(transactions)

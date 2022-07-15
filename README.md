@@ -24,7 +24,7 @@ Belangrijk om te lezen voor gebruik:
   Verkoopfacturen (import) > Mijn importdefinities > Import script
 - Voeg na afloop een duidelijke Uw. Ref. in bij externe borrels en borrels van
   de VvTP (zo weten de respectieve penningmeesters waar de factuur om gaat)
-- Als je naar de TU factureerd, zorg dan dat de juiste contactpersoon in Exact
+- Als je naar de TU factureert, zorg dan dat de juiste contactpersoon in Exact
   staat, en dat bij het veld BSN/sofinummer de baancode is ingevuld. Dit wordt
   in de factuurlayout voor de TU gebruikt. Als het niet is ingevuld, wordt de
   factuur niet betaald.
@@ -40,7 +40,7 @@ de juiste grootboekkaarten "representatie" en "gebruik tappers". Doe dit door
 te gaan naar 9998: Kassa intern > afletteren, en selecteer eerst alle
 transacties met "gebruik tappers", druk op afletteren. Druk op "overige", vul
 de juiste grootboekrekening in, een goede omschrijving, boekdatum in de juiste
-periode, en druk op afletteren. Doe hetzelfde voor "represenatie" of andere
+periode, en druk op afletteren. Doe hetzelfde voor "representatie" of andere
 openstaande transacties.
 
 ## Extern gebruik
@@ -48,3 +48,21 @@ openstaande transacties.
 Het script is gemaakt voor intern gebruik voor de Vereniging voor Technische
 Physica, dus als je het als externe wilt gebruiken moet je hoogstwaarschijnlijk
 veel aanpassen om het werkend te krijgen.
+
+## Foutmeldingen
+
+Er kunnen foutmeldingen optreden, die meestal onder de volgende categorieën
+vallen: fouten bij het runnen van het script, of fouten bij de Exact import.
+
+- Er is een nieuwe "no-sale" mogelijkheid aangemaakt in Twelve of de spelling
+  is aangepast.
+  - Als de categorie is hernoemd, dan pas dit aan in het script en maak een
+    pull request aan. In `export_ruwe_transactiegegevens.csv` moet
+    waarschijnlijk de oude naam vervangen worden, aangezien de naam halverwege
+    is veranderd.
+  - Als er een nieuwe "no-sale" mogelijkheid is bijgekomen, dan moet de logica
+    in het script worden herschreven. Vooral de functions `add_customer` en
+    `add_description` zijn hiervoor van belang. Vraag om hulp!
+- Er zijn artikelen in Twelve aanwezig maar niet in Exact. Maak die aan in
+  Exact door een oud artikel (en voorraad GBR) te kopieren (en aan te passen)
+  en probeer het bestand opnieuw te importeren.
