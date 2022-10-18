@@ -11,7 +11,6 @@ TAPPERS = "Gebruik tappers"
 BESTUUR_VVTP = "Bestuur VvTP"
 EVENEMENT_VVTP = "Activiteit VvTP"
 EXTERN = "Externe borrel"
-CAMPUS_CRAWL = "Campus crawl muntje"
 # Cost Units (as defined in Exact online). Used to distinguish between Wed/Fri
 # revenue.
 CU_WOENSDAG = "1"
@@ -35,7 +34,7 @@ JOURNAL = 50
 BUNDLE_PAYMENTS = [TAPPERS, BESTUUR_VVTP]
 # Specify which payments are internal, for the VvTP, and external
 VVTP_PAYMENTS = [BESTUUR_VVTP, EVENEMENT_VVTP]
-EXTERNAL_PAYMENTS = [EXTERN, CAMPUS_CRAWL]
+EXTERNAL_PAYMENTS = [EXTERN]
 INTERNAL_PAYMENTS = [TAPPERS]
 # Warnings
 WARN_EXTERN = 0
@@ -167,9 +166,6 @@ def add_description(data):
         if PaymentType == EXTERN:
             data["Description"] = "Borrel PLAATSHOUDER"
             data["YourRef"] = "PLAATSHOUDER"
-        elif PaymentType == CAMPUS_CRAWL:
-            data["Description"] = "Campus Crawl Muntje"
-            data["YourRef"] = "Campus Crawl Muntje"
         else:
             raise NotImplementedError(
                 "De combinatie relatie en betaaltype is niet bekend "
