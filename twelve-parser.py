@@ -128,54 +128,37 @@ def add_customer(data):
 
 
 def add_description(data):
-    Customer = data["OrderAccountCode"].iloc[0]
     Date = data["Datum"].iloc[0]
+    Customer = data["OrderAccountCode"].iloc[0]
     PaymentType = data["Betaaltype"].iloc[0]
-    if Customer == KASSADEBITEUR and PaymentType == PIN:
-        data["Description"] = "kassamutaties {}".format(Date.strftime("%d-%m-%Y"))
-        data["YourRef"] = None
-    elif Customer == KASSAINTERN:
-        if PaymentType == TAPPERS:
+    match Customer, PaymentType:
+        case KASSADEBITEUR, PIN:
+            data["Description"] = "kassamutaties {}".format(Date.strftime("%d-%m-%Y"))
+            data["YourRef"] = None
+        case KASSAINTERN, TAPPERS:
             data["Description"] = "gebruik tappers {}".format(Date.strftime("%B %Y"))
             data["YourRef"] = None
-        else:
-            raise NotImplementedError(
-                "De combinatie relatie en betaaltype is niet bekend "
-                f"({Customer} en {PaymentType}). Is er een nieuwe no-sale "
-                "mogelijkheid bijgekomen?"
-            )
-    elif Customer == VVTP:
-        if PaymentType == BESTUUR_VVTP:
+        case VVTP, BESTUUR_VVTP:
             description = "Bestuur VvTP {}".format(Date.strftime("%B %Y"))
             data["Description"] = description
             data["YourRef"] = description
-        elif PaymentType == EVENEMENT_VVTP:
+        case VVTP, EVENEMENT_VVTP:
             global WARN_BORREL_VVTP
             WARN_BORREL_VVTP += 1
             data["Description"] = "Borrel VvTP PLAATSHOUDER"
             data["YourRef"] = "Borrel VvTP PLAATSHOUDER"
-        else:
-            raise NotImplementedError(
-                "De combinatie relatie en betaaltype is niet bekend "
-                f"({Customer} en {PaymentType}). Is er een nieuwe no-sale "
-                "mogelijkheid bijgekomen?"
-            )
-    elif Customer == EXTERN_PLACEHOLDER:
-        global WARN_EXTERN
-        WARN_EXTERN += 1
-        if PaymentType == EXTERN:
+        case EXTERN_PLACEHOLDER, EXTERN:
+            global WARN_EXTERN
+            WARN_EXTERN += 1
             data["Description"] = "Borrel PLAATSHOUDER"
             data["YourRef"] = "PLAATSHOUDER"
-        else:
+        case _:
             raise NotImplementedError(
                 "De combinatie relatie en betaaltype is niet bekend "
-                f"({Customer} en {PaymentType}). Is er een nieuwe no-sale "
-                "mogelijkheid bijgekomen?"
+                f"({Customer} en {PaymentType}). Is er nieuwe betaallogica "
+                "bijgekomen? Dan moet het script worden aangepast, vraag om "
+                "hulp."
             )
-    else:
-        raise NotImplementedError(
-            f"De relatie {Customer} is niet bekend. Is er een nieuwe aangemaakt?"
-        )
     return data
 
 
@@ -202,7 +185,7 @@ def add_date(data):
 
 
 def add_all_fields(totals):
-    """Takes twelve transation export and create Exact Online import files.
+    """Takes twelve transaction export and create Exact Online import files.
 
     First, transactions are separated based on whether the payments are bundled
     by month (like "Gebruik tappers"), or settled directly (like card
