@@ -1,41 +1,63 @@
 import time
+from enum import Enum
 
 import pandas as pd
 
 # defaults
 pd.options.mode.chained_assignment = None  # default='warn'
 INPUTFILE = "export_ruwe_transactiegegevens.csv"
-# Paymenttypes in Twelve
-PIN = "Omzet PIN"
-TAPPERS = "Gebruik tappers"
-BESTUUR_VVTP = "Bestuur VvTP"
-EVENEMENT_VVTP = "Activiteit VvTP"
-EXTERN = "Externe borrel"
-# Cost Units (as defined in Exact online). Used to distinguish between Wed/Fri
-# revenue.
-CU_WOENSDAG = "1"
-CU_VRIJDAG = "2"
-CU_EXTERN = "3"
-# Customers (as defined in Exact online). Internal payments (such as "Gebruik
-# tappers") go through KASSAINTERN, direct payments (currently only paying by
-# card) go through KASSADEBITEUR, while external payments are assigned a
-# placeholder EXTERN_PLACEHOLDER.
-VVTP = "1"
-EXTERN_PLACEHOLDER = "9997"
-KASSAINTERN = "9998"
-KASSADEBITEUR = "9999"
-# Payment Conditions (as defined in Exact online).
-DIRECT = "02"
-ON_CREDITS = "30"  # 30 days
-# Invoice journal number (as defined in Exact online).
-JOURNAL = 50
+
+
+class PaymentType(Enum):
+    """PaymentTypes in Twelve"""
+
+    PIN = "Omzet PIN"
+    TAPPERS = "Gebruik tappers"
+    BESTUUR_VVTP = "Bestuur VvTP"
+    EVENEMENT_VVTP = "Activiteit VvTP"
+    EXTERN = "Externe borrel"
+
+
+class CostUnit(Enum):
+    """Cost Units (as defined in Exact online).
+
+    Used to distinguish between Wed/Fri revenue."""
+
+    WOENSDAG = "1"
+    VRIJDAG = "2"
+    EXTERN = "3"
+
+
+class Customer(Enum):
+    """Customers (as defined in Exact online).
+
+    Internal payments (such as "Gebruik tappers") go through KASSAINTERN,
+    direct payments (currently only paying by card) go through KASSADEBITEUR,
+    while external payments are assigned a placeholder EXTERN_PLACEHOLDER."""
+
+    VVTP = "1"
+    EXTERN_PLACEHOLDER = "9997"
+    KASSAINTERN = "9998"
+    KASSADEBITEUR = "9999"
+
+
+class PaymentCondition(Enum):
+    """Payment Conditions (as defined in Exact online)."""
+
+    DIRECT = "02"
+    ON_CREDITS = "30"  # 30 days
+
+
 # Specify which payment methods should be grouped per month (used to bundle
 # e.g. "Gebruik tappers" per month)
-BUNDLE_PAYMENTS = [TAPPERS, BESTUUR_VVTP]
-# Specify which payments are internal, for the VvTP, and external
-VVTP_PAYMENTS = [BESTUUR_VVTP, EVENEMENT_VVTP]
-EXTERNAL_PAYMENTS = [EXTERN]
-INTERNAL_PAYMENTS = [TAPPERS]
+BUNDLE_PAYMENTS = [PaymentType.TAPPERS, PaymentType.BESTUUR_VVTP]
+# Specify which payments are direct, internal, for the VvTP, and external
+DIRECT_PAYMENTS = [PaymentType.PIN]
+VVTP_PAYMENTS = [PaymentType.BESTUUR_VVTP, PaymentType.EVENEMENT_VVTP]
+EXTERNAL_PAYMENTS = [PaymentType.EXTERN]
+INTERNAL_PAYMENTS = [PaymentType.TAPPERS]
+# Invoice journal number (as defined in Exact online).
+JOURNAL = 50
 # Warnings
 WARN_EXTERN = 0
 WARN_BORREL_VVTP = 0
@@ -104,50 +126,50 @@ def add_invoicenumber(data):
 
 
 def add_customer(data):
-    PaymentType = data.name
-    if PaymentType == PIN:
-        data["PaymentCondition"] = DIRECT
-        data["OrderAccountCode"] = KASSADEBITEUR
-    elif PaymentType in INTERNAL_PAYMENTS:
-        data["PaymentCondition"] = DIRECT
-        data["OrderAccountCode"] = KASSAINTERN
-    elif PaymentType in VVTP_PAYMENTS:
-        data["PaymentCondition"] = ON_CREDITS
-        data["OrderAccountCode"] = VVTP
-    elif PaymentType in EXTERNAL_PAYMENTS:
-        data["PaymentCondition"] = ON_CREDITS
-        data["OrderAccountCode"] = EXTERN_PLACEHOLDER
+    payment_type = PaymentType(data.name)
+    if payment_type in DIRECT_PAYMENTS:
+        data["PaymentCondition"] = PaymentCondition.DIRECT.value
+        data["OrderAccountCode"] = Customer.KASSADEBITEUR.value
+    elif payment_type in INTERNAL_PAYMENTS:
+        data["PaymentCondition"] = PaymentCondition.DIRECT.value
+        data["OrderAccountCode"] = Customer.KASSAINTERN.value
+    elif payment_type in VVTP_PAYMENTS:
+        data["PaymentCondition"] = PaymentCondition.ON_CREDITS.value
+        data["OrderAccountCode"] = Customer.VVTP.value
+    elif payment_type in EXTERNAL_PAYMENTS:
+        data["PaymentCondition"] = PaymentCondition.ON_CREDITS.value
+        data["OrderAccountCode"] = Customer.EXTERN_PLACEHOLDER.value
     else:
         raise NotImplementedError(
             "Er is weggeboekt op een no-sale categorie dit niet bekend is bij het "
-            f"script: {PaymentType}. Is er een categorie hernoemd? Of is er een nieuwe "
-            "toegevoegd? In het laatste geval moet het script worden aangepast, "
+            f"script: {payment_type}. Is er een categorie hernoemd? Of is er een "
+            "nieuwe toegevoegd? In het laatste geval moet het script worden aangepast, "
             "vraag om hulp."
         )
     return data
 
 
 def add_description(data):
-    Date = data["Datum"].iloc[0]
-    Customer = data["OrderAccountCode"].iloc[0]
-    PaymentType = data["Betaaltype"].iloc[0]
-    match Customer, PaymentType:
-        case KASSADEBITEUR, PIN:
-            data["Description"] = "kassamutaties {}".format(Date.strftime("%d-%m-%Y"))
+    date = data["Datum"].iloc[0]
+    customer = Customer(data["OrderAccountCode"].iloc[0])
+    payment_type = PaymentType(data["Betaaltype"].iloc[0])
+    match customer, payment_type:
+        case Customer.KASSADEBITEUR, PaymentType.PIN:
+            data["Description"] = "kassamutaties {}".format(date.strftime("%d-%m-%Y"))
             data["YourRef"] = None
-        case KASSAINTERN, TAPPERS:
-            data["Description"] = "gebruik tappers {}".format(Date.strftime("%B %Y"))
+        case Customer.KASSAINTERN, PaymentType.TAPPERS:
+            data["Description"] = "gebruik tappers {}".format(date.strftime("%B %Y"))
             data["YourRef"] = None
-        case VVTP, BESTUUR_VVTP:
-            description = "Bestuur VvTP {}".format(Date.strftime("%B %Y"))
+        case Customer.VVTP, PaymentType.BESTUUR_VVTP:
+            description = "Bestuur VvTP {}".format(date.strftime("%B %Y"))
             data["Description"] = description
             data["YourRef"] = description
-        case VVTP, EVENEMENT_VVTP:
+        case Customer.VVTP, PaymentType.EVENEMENT_VVTP:
             global WARN_BORREL_VVTP
             WARN_BORREL_VVTP += 1
             data["Description"] = "Borrel VvTP PLAATSHOUDER"
             data["YourRef"] = "Borrel VvTP PLAATSHOUDER"
-        case EXTERN_PLACEHOLDER, EXTERN:
+        case Customer.EXTERN_PLACEHOLDER, PaymentType.EXTERN:
             global WARN_EXTERN
             WARN_EXTERN += 1
             data["Description"] = "Borrel PLAATSHOUDER"
@@ -155,7 +177,7 @@ def add_description(data):
         case _:
             raise NotImplementedError(
                 "De combinatie relatie en betaaltype is niet bekend "
-                f"({Customer} en {PaymentType}). Is er nieuwe betaallogica "
+                f"({customer} en {payment_type}). Is er nieuwe betaallogica "
                 "bijgekomen? Dan moet het script worden aangepast, vraag om "
                 "hulp."
             )
@@ -163,17 +185,18 @@ def add_description(data):
 
 
 def add_costunit(data):
-    PaymentType, Date = data.name
-    Weekday = Date.strftime("%w")
-    if PaymentType == PIN:
-        if Weekday == "3":
-            data["CostUnit"] = CU_WOENSDAG
-        elif Weekday == "5":
-            data["CostUnit"] = CU_VRIJDAG
+    date = data["Datum"].iloc[0]
+    payment_type = PaymentType(data["Betaaltype"].iloc[0])
+    weekday = date.strftime("%w")
+    if payment_type in DIRECT_PAYMENTS:
+        if weekday == "3":
+            data["CostUnit"] = CostUnit.WOENSDAG.value
+        elif weekday == "5":
+            data["CostUnit"] = CostUnit.VRIJDAG.value
         else:
             data["CostUnit"] = None
-    elif PaymentType == EXTERN:
-        data["CostUnit"] = CU_EXTERN
+    elif payment_type == PaymentType.EXTERN:
+        data["CostUnit"] = CostUnit.EXTERN.value
     else:
         data["CostUnit"] = None
     return data
@@ -195,13 +218,14 @@ def add_all_fields(totals):
     functions starting with "add_". Once these have all been applied, the final
     invoice file is made that can be imported into Exact online.
     """
+    bundle = [payment_type.value for payment_type in BUNDLE_PAYMENTS]
     totals1 = (
-        totals.query("Betaaltype in {}".format(BUNDLE_PAYMENTS))
+        totals.query("Betaaltype in {}".format(bundle))
         .groupby(["Betaaltype", pd.Grouper(key="Datum", freq="1M")])
         .apply(add_invoicenumber)
     )
     totals2 = (
-        totals.query("Betaaltype not in {}".format(BUNDLE_PAYMENTS))
+        totals.query("Betaaltype not in {}".format(bundle))
         .groupby(["Betaaltype", "Datum"])
         .apply(add_invoicenumber)
     )
