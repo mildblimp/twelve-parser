@@ -8,7 +8,6 @@ INPUTFILE = "export_ruwe_transactiegegevens.csv"
 # Paymenttypes in Twelve
 PIN = "Omzet PIN"
 TAPPERS = "Gebruik tappers"
-REPRESENTATIE = "representatie"
 BESTUUR_VVTP = "Bestuur VvTP"
 EVENEMENT_VVTP = "Activiteit VvTP"
 EXTERN = "Externe borrel"
@@ -33,11 +32,11 @@ ON_CREDITS = "30"  # 30 days
 JOURNAL = 50
 # Specify which payment methods should be grouped per month (used to bundle
 # e.g. "Gebruik tappers" per month)
-BUNDLE_PAYMENTS = [TAPPERS, BESTUUR_VVTP, REPRESENTATIE]
+BUNDLE_PAYMENTS = [TAPPERS, BESTUUR_VVTP]
 # Specify which payments are internal, for the VvTP, and external
 VVTP_PAYMENTS = [BESTUUR_VVTP, EVENEMENT_VVTP]
 EXTERNAL_PAYMENTS = [EXTERN, CAMPUS_CRAWL]
-INTERNAL_PAYMENTS = [REPRESENTATIE, TAPPERS]
+INTERNAL_PAYMENTS = [TAPPERS]
 # Warnings
 WARN_EXTERN = 0
 WARN_BORREL_VVTP = 0
@@ -139,9 +138,6 @@ def add_description(data):
     elif Customer == KASSAINTERN:
         if PaymentType == TAPPERS:
             data["Description"] = "gebruik tappers {}".format(Date.strftime("%B %Y"))
-            data["YourRef"] = None
-        elif PaymentType == REPRESENTATIE:
-            data["Description"] = "representatie {}".format(Date.strftime("%B %Y"))
             data["YourRef"] = None
         else:
             raise NotImplementedError(
