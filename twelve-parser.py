@@ -7,25 +7,29 @@ pd.options.mode.chained_assignment = None  # default='warn'
 INPUTFILE = "export_ruwe_transactiegegevens.csv"
 # Paymenttypes in Twelve
 PIN = "Omzet PIN"
-TAPPERS = "gebruik tappers"
+TAPPERS = "Gebruik tappers"
 REPRESENTATIE = "representatie"
-BESTUUR_VVTP = "rekening VvTP"
-EVENEMENT_VVTP = "Commissie"
-EXTERN = "externe borrel"
+BESTUUR_VVTP = "Bestuur VvTP"
+EVENEMENT_VVTP = "Activiteit VvTP"
+EXTERN = "Externe borrel"
 CAMPUS_CRAWL = "Campus crawl muntje"
-# Cost Unit links in Exact Online
+# Cost Units (as defined in Exact online). Used to distinguish between Wed/Fri
+# revenue.
 CU_WOENSDAG = "1"
 CU_VRIJDAG = "2"
 CU_EXTERN = "3"
-# Customers
+# Customers (as defined in Exact online). Internal payments (such as "Gebruik
+# tappers") go through KASSAINTERN, direct payments (currently only paying by
+# card) go through KASSADEBITEUR, while external payments are assigned a
+# placeholder EXTERN_PLACEHOLDER.
 VVTP = "1"
 EXTERN_PLACEHOLDER = "9997"
 KASSAINTERN = "9998"
 KASSADEBITEUR = "9999"
-# Payment Conditions
+# Payment Conditions (as defined in Exact online).
 DIRECT = "02"
 ON_CREDITS = "30"  # 30 days
-# Invoice journal number
+# Invoice journal number (as defined in Exact online).
 JOURNAL = 50
 # Specify which payment methods should be grouped per month (used to bundle
 # e.g. "Gebruik tappers" per month)
@@ -73,6 +77,7 @@ N.B. Lees de README! (Staat op Github)
 
 
 def get_transactions(inputfile=INPUTFILE):
+    """Read the exported file from Twelve and return a pandas DataFrame"""
     with open(inputfile, "r", encoding="utf-8") as f:
         df_transactions = pd.read_csv(f, delimiter=";")
         print(f"Reading {inputfile}...\n")
@@ -205,7 +210,16 @@ def add_date(data):
 
 
 def add_all_fields(totals):
-    """Takes twelve transation export and create Exact Online import files."""
+    """Takes twelve transation export and create Exact Online import files.
+
+    First, transactions are separated based on whether the payments are bundled
+    by month (like "Gebruik tappers"), or settled directly (like card
+    payments).
+
+    Next, different fields get added according to some respective logic by
+    functions starting with "add_". Once these have all been applied, the final
+    invoice file is made that can be imported into Exact online.
+    """
     totals1 = (
         totals.query("Betaaltype in {}".format(BUNDLE_PAYMENTS))
         .groupby(["Betaaltype", pd.Grouper(key="Datum", freq="1M")])
