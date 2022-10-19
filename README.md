@@ -29,19 +29,22 @@ Belangrijk om te lezen voor gebruik:
   in de factuurlayout voor de TU gebruikt. Als het niet is ingevuld, wordt de
   factuur niet betaald.
 - Controleer de facturen voor gebruik (vooral die voor de VvTP en externe
-  instanties) en verstuur ze in Exact via email.
+  instanties) en verstuur ze in Exact via email. NB: let op de factuurdatum,
+  zorg dat die in het juiste kwartaal staat!
 - Letter 9998: Kassa intern af (zie hieronder)
 
 Na afloop krijg je een bestand `facturen.csv` die je kan importeren in Exact.
 Alle PIN transacties gaan via de relatie "Kassadebiteur", en die letteren
-precies goed af op het bedrag dat via de PIN is binnengekomen. Interne
-transacties gaan via de relatie "Kassa intern", deze moet je nog afletteren op
-de juiste grootboekkaarten "representatie" en "gebruik tappers". Doe dit door
-te gaan naar 9998: Kassa intern > afletteren, en selecteer eerst alle
-transacties met "gebruik tappers", druk op afletteren. Druk op "overige", vul
-de juiste grootboekrekening in, een goede omschrijving, boekdatum in de juiste
-periode, en druk op afletteren. Doe hetzelfde voor "representatie" of andere
-openstaande transacties.
+precies goed af op het bedrag dat via de PIN is binnengekomen.
+
+Interne transacties gaan via de relatie "Kassa intern", deze moet je nog
+afletteren op de juiste grootboekkaarten "representatie" en "gebruik tappers".
+Doe dit door te gaan naar 9998: Kassa intern > afletteren, en selecteer eerst
+alle transacties met "gebruik tappers", druk op afletteren. Er komt nu een
+waarschuwing met dat de bedragen niet in evenwicht zijn. Druk op ja. Druk op
+"overige", vul de juiste grootboekrekening in, een goede omschrijving,
+boekdatum in de juiste periode, en druk op afletteren. Doe hetzelfde voor
+"representatie" of andere openstaande transacties.
 
 ## Extern gebruik
 
