@@ -127,25 +127,30 @@ def add_invoicenumber(data):
 
 def add_customer(data):
     payment_type = PaymentType(data.name)
-    if payment_type in DIRECT_PAYMENTS:
-        data["PaymentCondition"] = PaymentCondition.DIRECT.value
-        data["OrderAccountCode"] = Customer.KASSADEBITEUR.value
-    elif payment_type in INTERNAL_PAYMENTS:
-        data["PaymentCondition"] = PaymentCondition.DIRECT.value
-        data["OrderAccountCode"] = Customer.KASSAINTERN.value
-    elif payment_type in VVTP_PAYMENTS:
-        data["PaymentCondition"] = PaymentCondition.ON_CREDITS.value
-        data["OrderAccountCode"] = Customer.VVTP.value
-    elif payment_type in EXTERNAL_PAYMENTS:
-        data["PaymentCondition"] = PaymentCondition.ON_CREDITS.value
-        data["OrderAccountCode"] = Customer.EXTERN_PLACEHOLDER.value
-    else:
-        raise NotImplementedError(
-            "Er is weggeboekt op een no-sale categorie dit niet bekend is bij het "
-            f"script: {payment_type}. Is er een categorie hernoemd? Of is er een "
-            "nieuwe toegevoegd? In het laatste geval moet het script worden aangepast, "
-            "vraag om hulp."
-        )
+    # The following match/case statement is not really orthodox. Unfortunately
+    # it's not possible to check for values in a list, so we use case guards
+    # instead. See https://stackoverflow.com/questions/74123249/how-to-use-
+    # multiple-cases-in-structural-pattern-matching-switch-case-in-python
+    match payment_type:
+        case _ if payment_type in DIRECT_PAYMENTS:
+            data["PaymentCondition"] = PaymentCondition.DIRECT.value
+            data["OrderAccountCode"] = Customer.KASSADEBITEUR.value
+        case _ if payment_type in INTERNAL_PAYMENTS:
+            data["PaymentCondition"] = PaymentCondition.DIRECT.value
+            data["OrderAccountCode"] = Customer.KASSAINTERN.value
+        case _ if payment_type in VVTP_PAYMENTS:
+            data["PaymentCondition"] = PaymentCondition.ON_CREDITS.value
+            data["OrderAccountCode"] = Customer.VVTP.value
+        case _ if payment_type in EXTERNAL_PAYMENTS:
+            data["PaymentCondition"] = PaymentCondition.ON_CREDITS.value
+            data["OrderAccountCode"] = Customer.EXTERN_PLACEHOLDER.value
+        case _:
+            raise NotImplementedError(
+                "Er is weggeboekt op een no-sale categorie dit niet bekend is bij het "
+                f"script: {payment_type}. Is er een categorie hernoemd? Of is er een "
+                "nieuwe toegevoegd? In het laatste geval moet het script worden "
+                " aangepast, vraag om hulp."
+            )
     return data
 
 
@@ -188,17 +193,15 @@ def add_costunit(data):
     date = data["Datum"].iloc[0]
     payment_type = PaymentType(data["Betaaltype"].iloc[0])
     weekday = date.strftime("%w")
-    if payment_type in DIRECT_PAYMENTS:
-        if weekday == "3":
+    match payment_type, weekday:
+        case _, "3" if payment_type in DIRECT_PAYMENTS:
             data["CostUnit"] = CostUnit.WOENSDAG.value
-        elif weekday == "5":
+        case _, "5" if payment_type in DIRECT_PAYMENTS:
             data["CostUnit"] = CostUnit.VRIJDAG.value
-        else:
+        case _ if payment_type == PaymentType.EXTERN:
+            data["CostUnit"] = CostUnit.EXTERN.value
+        case _:
             data["CostUnit"] = None
-    elif payment_type == PaymentType.EXTERN:
-        data["CostUnit"] = CostUnit.EXTERN.value
-    else:
-        data["CostUnit"] = None
     return data
 
 
