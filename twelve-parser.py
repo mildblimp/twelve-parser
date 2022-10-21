@@ -126,7 +126,15 @@ def add_invoicenumber(data):
 
 
 def add_customer(data):
-    payment_type = PaymentType(data.name)
+    try:
+        payment_type = PaymentType(data.name)
+    except ValueError as e:
+        raise NotImplementedError(
+            "Er is weggeboekt op een no-sale categorie dit niet bekend is bij "
+            f"het script: {data.name}. Is er een categorie hernoemd? Of is er "
+            "een nieuwe toegevoegd? In het laatste geval moet het script worden "
+            "aangepast, vraag om hulp."
+        ) from e
     if payment_type in DIRECT_PAYMENTS:
         data["PaymentCondition"] = PaymentCondition.DIRECT.value
         data["OrderAccountCode"] = Customer.KASSADEBITEUR.value
@@ -140,11 +148,10 @@ def add_customer(data):
         data["PaymentCondition"] = PaymentCondition.ON_CREDITS.value
         data["OrderAccountCode"] = Customer.EXTERN_PLACEHOLDER.value
     else:
-        raise NotImplementedError(
-            "Er is weggeboekt op een no-sale categorie dit niet bekend is bij "
-            f"het  script: {payment_type}. Is er een categorie hernoemd? Of is er "
-            "een nieuwe toegevoegd? In het laatste geval moet het script worden "
-            "aangepast, vraag om hulp."
+        raise ValueError(
+            f"PaymentType: {payment_type} niet toegewezen aan een betaalgroep "
+            "zoals bijvoorbeeld DIRECT_PAYMENTS. Voeg het PaymentType aan een bestaande"
+            " categorie toe of maak een nieuwe aan. Vraag om hulp."
         )
     return data
 
@@ -184,6 +191,11 @@ def add_description(data):
     return data
 
 
+def add_date(data):
+    data["Datum"] = data["Datum"].max()
+    return data
+
+
 def add_costunit(data):
     date = data["Datum"].iloc[0]
     payment_type = PaymentType(data["Betaaltype"].iloc[0])
@@ -197,11 +209,6 @@ def add_costunit(data):
                 data["CostUnit"] = CostUnit.VRIJDAG.value
     elif payment_type == PaymentType.EXTERN:
         data["CostUnit"] = CostUnit.EXTERN.value
-    return data
-
-
-def add_date(data):
-    data["Datum"] = data["Datum"].max()
     return data
 
 
